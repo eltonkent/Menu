@@ -17,9 +17,9 @@
  */
 package org.broadleafcommerce.menu.admin.server.security.service;
 
+import org.broadleafcommerce.openadmin.server.security.domain.AdminPermission;
 import org.broadleafcommerce.openadmin.server.security.service.AbstractAdminSecurityContributor;
 import org.broadleafcommerce.openadmin.server.security.service.AdminSecurityContributor;
-import org.broadleafcommerce.openadmin.server.security.service.domain.AdminPermissionDTO;
 import org.broadleafcommerce.openadmin.server.security.service.type.PermissionType;
 import org.springframework.stereotype.Component;
 
@@ -32,29 +32,48 @@ public class MenuAdminSecurityContributor extends AbstractAdminSecurityContribut
 
     @Override
     protected void createAdminModules() {}
+    
+    @Override
+    protected void createAdminRoles() {}
 
     @Override
     protected void createAdminSections() {
-        ArrayList<AdminPermissionDTO> permissions = new ArrayList<>();
-        permissions.add(createPermission("PERMISSION_MENU", PermissionType.READ));
-        permissions.add(createPermission("PERMISSION_MENU", PermissionType.ALL));
+        ArrayList<AdminPermission> permissions = new ArrayList<>();
+        permissions.add(findPermissionById(-27002L));
+        permissions.add(findPermissionById(-27003L));
         // INSERT INTO BLC_ADMIN_SECTION (ADMIN_SECTION_ID, CEILING_ENTITY, ADMIN_MODULE_ID, NAME, SECTION_KEY, URL, USE_DEFAULT_HANDLER, DISPLAY_ORDER) VALUES (-27000, 'org.broadleafcommerce.menu.domain.Menu', -2, 'Menus', 'Menus', '/menu', TRUE, 3000);
-        createSection("Menus", MenuSectionKeys.MENU, "/menu", "org.broadleafcommerce.menu.domain.Menu", ModuleKeys.CONTENT, 3000, permissions);
+        createSection("Menus", MenuSectionKeys.MENU, "/menu", "org.broadleafcommerce.menu.domain.Menu", ModuleKeys.CONTENT, 3000, permissions, -27000L);
     }
 
     @Override
     protected void createAdminPermissionEntities() {
-        AdminPermissionDTO viewPermission = createPermission("PERMISSION_READ_MENU", PermissionType.READ);
-        AdminPermissionDTO maintainPermission = createPermission("PERMISSION_ALL_MENU", PermissionType.ALL);
         List<String> entities = Arrays.asList(
                 "org.broadleafcommerce.menu.domain.Menu",
                 "org.broadleafcommerce.menu.domain.MenuItem"
         );
-        createAdminPermissionEntitiesForPermission(viewPermission, entities);
-        createAdminPermissionEntitiesForPermission(maintainPermission, entities);
+        createAdminPermissionEntitiesForPermission(findPermissionById(-27000L), entities);
+        createAdminPermissionEntitiesForPermission(findPermissionById(-27001L), entities);
+    }
+    
+    @Override
+    protected void createPermissions() {
+        AdminPermission readMenu = createPermission("PERMISSION_READ_MENU", PermissionType.READ, false, -27000L, "Read Menu");
+        AdminPermission readMenuFriendly = createPermission("PERMISSION_MENU", PermissionType.READ, true, -27002L, "View Menu");
+        readMenuFriendly.setChildPermissions(Arrays.asList(readMenu));
+        
+        AdminPermission allMenu = createPermission("PERMISSION_ALL_MENU", PermissionType.ALL, false, -27001L, "All Menu");
+        AdminPermission allMenuFriendly = createPermission("PERMISSION_MENU", PermissionType.ALL, true, -27003L, "Maintain Menus");
+        allMenuFriendly.setChildPermissions(Arrays.asList(allMenu));
+    }
+    
+    @Override
+    protected void addPermissionsToRoles() {
+        addPermissionToRole(-1L, -27003L);
+        addPermissionToRole(-5L, -27003L);
     }
 
     protected class MenuSectionKeys {
         public static final String MENU = "Menus";
     }
+
 }
